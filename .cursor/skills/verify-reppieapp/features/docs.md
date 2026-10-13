@@ -22,7 +22,7 @@ Preconditions:
 - The browser is locked after navigation.
 - `docs-native` is out of scope for this harness. Report it as not driven, with the reason that no simulator or device was launched.
 
-- **Tab-bar entry.** Open the doctor URL with path `/`. Run `browser_snapshot` and `browser_click` on the link named `Docs` whose target is `https://docs.expo.dev`. Run `browser_tabs` with `action` `list`. A tab URL is `https://docs.expo.dev` or a path under that host. The ReppieApp tab still shows `Welcome to Expo`.
+- **Tab-bar entry.** Open the doctor URL with path `/`. Run `browser_snapshot` and `browser_click` on the link named `Docs` whose target is `https://docs.expo.dev`. Run `browser_tabs` with `action` `list`. A tab URL is `https://docs.expo.dev` or a path under that host. The ReppieApp tab still shows `Welcome to Reppie`.
 - **Explore entry.** Return to the doctor URL with path `/explore`. Run `browser_click` on the link named `Expo documentation`. `browser_tabs` `list` again shows a docs.expo.dev tab. The Explore page remains on the ReppieApp origin.
 - **Proof.** Save the tab list after the top-bar click as `artifacts/docs/tabs.txt`, a snapshot of the still-open ReppieApp page as `artifacts/docs/reppie.aria.txt`, and the doctor URL plus which entry point was used in `artifacts/docs/notes.txt`. Screenshot the ReppieApp page, not the docs site, so the proof shows this app's chrome.
 

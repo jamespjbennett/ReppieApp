@@ -34,6 +34,6 @@ Each feature file starts with an H1 and one paragraph, then exactly four H2 sect
 
 ## Features
 
-- [Home](./home.md) covers the welcome copy, the three hint rows, the web dev-tools hint, and the web version badge.
+- [Home](./home.md) covers the workout sentence, Parse, Save, the in-memory history, and the web version badge.
 - [Explore](./explore.md) covers the Explore tab and opening each starter section.
 - [Docs](./docs.md) covers the web tab-bar Docs link and the Explore documentation button.
