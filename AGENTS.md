@@ -2,15 +2,47 @@ This is an Expo/React Native mobile application. Prioritize mobile-first pattern
 
 ## Product
 
-Reppie is a workout log for one person. The first slice is a sentence the user types, a draft of sets, and a save the user confirms.
+Reppie is a workout log for one person. The later product turns a spoken or typed sentence into sets, then estimates strain and fitness per muscle. Build the log first. Muscle scores, voice, and the mascot read that log. They do not exist yet.
 
-Store only a confirmed log. Keep the original sentence in `rawText` and the parser name in `parserVersion`. Call the parser through `parseWorkout`. The first parser is a stub with no network and no secret.
+The first slice is one screen. The user types a sentence, sees an editable draft, confirms it, and finds that log in a history list. Store only a confirmed log.
 
-Save the log on the phone with `expo-sqlite`. Use one row per set. A set has `reps`, `weightKg`, and `durationSec`. Leave a field null when the user did not say that number. Do not invent a value.
+Call the parser through `parseWorkout`. The first parser is a stub with no network and no secret. The screen never calls a model directly.
 
-Keep the model key out of the client. After the stub loop works, add one `+api.ts` route in this repo and read the key only there. Leave `web.output` as `static` until that route exists.
+Use this shape. `source` stays `text` until voice exists. Leave `reps`, `weightKg`, or `durationSec` null when the user did not say that number. Do not invent a value. Store weight in kilograms.
 
-Leave voice input, the Reppie mascot, muscle scores, a hosted database, and a second API project for later.
+```ts
+type WorkoutLog = {
+  id: string;
+  createdAt: string;
+  source: 'text' | 'voice';
+  rawText: string;
+  parserVersion: string;
+  exercises: ExerciseEntry[];
+};
+
+type ExerciseEntry = {
+  name: string;
+  sets: SetEntry[];
+};
+
+type SetEntry = {
+  reps: number | null;
+  weightKg: number | null;
+  durationSec: number | null;
+};
+```
+
+Save the log on the phone with `expo-sqlite`. Use one row per set so a later muscle total is a query. Tables:
+
+- `workout_logs` has `id`, `created_at`, `raw_text`, and `parser_version`.
+- `exercises` has `id`, `log_id`, `position`, and `name`.
+- `sets` has `id`, `exercise_id`, `position`, `reps`, `weight_kg`, and `duration_sec`.
+
+Put the types in `src/features/workout/types.ts`. Put `parseWorkout` in `src/features/workout/parse-workout.ts`. Put save and list in `src/db/workout-logs.ts`. Wrap the app in `SQLiteProvider` from `src/app/_layout.tsx`. Replace the starter Home screen in `src/app/index.tsx` with the log screen. Keep non-route code out of `src/app/`.
+
+Keep the model key out of the client. After the stub loop works, add `src/app/api/parse-workout+api.ts` and read the key only in that file, or in a module that only that file imports. Leave `web.output` as `static` until that route exists. The route returns a draft. It does not store the log.
+
+Leave voice input, the Reppie mascot, muscle scores, a hosted database, and a second API project for later. There is one repo and one database, and that database is on the phone.
 
 A session that starts with a hosted database or a second service has ignored this plan. Build the confirm-and-save loop first.
 
