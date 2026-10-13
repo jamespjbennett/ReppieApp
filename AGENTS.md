@@ -1,5 +1,19 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
+## Product
+
+Reppie is a workout log for one person. The first slice is a sentence the user types, a draft of sets, and a save the user confirms.
+
+Store only a confirmed log. Keep the original sentence in `rawText` and the parser name in `parserVersion`. Call the parser through `parseWorkout`. The first parser is a stub with no network and no secret.
+
+Save the log on the phone with `expo-sqlite`. Use one row per set. A set has `reps`, `weightKg`, and `durationSec`. Leave a field null when the user did not say that number. Do not invent a value.
+
+Keep the model key out of the client. After the stub loop works, add one `+api.ts` route in this repo and read the key only there. Leave `web.output` as `static` until that route exists.
+
+Leave voice input, the Reppie mascot, muscle scores, a hosted database, and a second API project for later.
+
+A session that starts with a hosted database or a second service has ignored this plan. Build the confirm-and-save loop first.
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
