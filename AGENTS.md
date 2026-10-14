@@ -6,7 +6,9 @@ Reppie is a workout log for one person. The later product turns a spoken or type
 
 The first slice is one screen. The user types a sentence, sees an editable draft, confirms it, and finds that log in a history list. Store only a confirmed log.
 
-Call the parser through `parseWorkout`. The first parser is a stub with no network and no secret. The screen never calls a model directly.
+Call the parser through `parseWorkout`. The first parser is a stub with no network and no secret. The screen never calls a model directly. `parserVersion` is `stub-1`. The stub matches a name of letters and spaces, then a count such as `3x8`, then an optional kilogram number. `bench 3x8 80kg` becomes one exercise named Bench, three sets, 8 reps, 80 kg, and a null duration. `bench 3x8` leaves `weightKg` null. A set count above 30 is unmatched, so one keystroke cannot build a row per digit. `pull-up 3x8` and `80lb` are unmatched. An empty sentence has no exercises and cannot be saved. Any other sentence becomes one exercise named from the text and one set of nulls, so the user can fix it. A set field that is not a number blocks Save until the user enters a number or clears it.
+
+The list that exists now lives in memory. `WorkoutJournalProvider` in `src/app/_layout.tsx` holds it. `confirm` is the only function that appends. Reloading the app drops the list. A tab change must not drop it. Do not add `expo-sqlite` until a later commit whose only job is persistence.
 
 Use this shape. `source` stays `text` until voice exists. Leave `reps`, `weightKg`, or `durationSec` null when the user did not say that number. Do not invent a value. Store weight in kilograms.
 
@@ -32,19 +34,25 @@ type SetEntry = {
 };
 ```
 
-Save the log on the phone with `expo-sqlite`. Use one row per set so a later muscle total is a query. Tables:
+The next persistence commit saves the log on the phone with `expo-sqlite`. Use one row per set so a later muscle total is a query. Tables:
 
 - `workout_logs` has `id`, `created_at`, `raw_text`, and `parser_version`.
 - `exercises` has `id`, `log_id`, `position`, and `name`.
 - `sets` has `id`, `exercise_id`, `position`, `reps`, `weight_kg`, and `duration_sec`.
 
-Put the types in `src/features/workout/types.ts`. Put `parseWorkout` in `src/features/workout/parse-workout.ts`. Put save and list in `src/db/workout-logs.ts`. Wrap the app in `SQLiteProvider` from `src/app/_layout.tsx`. Replace the starter Home screen in `src/app/index.tsx` with the log screen. Keep non-route code out of `src/app/`.
+Put the types in `src/features/workout/types.ts`. Put `parseWorkout` in `src/features/workout/parse-workout.ts`. Put the in-memory list in `src/features/workout/journal.tsx`. The log screen is `src/app/index.tsx`. When persistence lands, put save and list in `src/db/workout-logs.ts` and wrap the app in `SQLiteProvider` from `src/app/_layout.tsx`. Keep non-route code out of `src/app/`.
 
 Keep the model key out of the client. After the stub loop works, add `src/app/api/parse-workout+api.ts` and read the key only in that file, or in a module that only that file imports. Leave `web.output` as `static` until that route exists. The route returns a draft. It does not store the log.
 
 Leave voice input, the Reppie mascot, muscle scores, a hosted database, and a second API project for later. There is one repo and one database, and that database is on the phone.
 
 A session that starts with a hosted database or a second service has ignored this plan. Build the confirm-and-save loop first.
+
+## Decisions
+
+Product and technical decisions live in the Product section above. When one of them changes, edit that section in the same commit as the code. Do not add a second context file. `AGENTS.md` is the file every session loads.
+
+If chat and this file disagree, this file wins. A session that ships `expo-sqlite`, a model key, or a second service because an older chat said to has ignored the current section.
 
 ## Expo has changed — do not trust your training data
 

@@ -12,7 +12,7 @@ Web and native do not present the same chrome:
 - Web puts a top bar on the page: `Expo Starter`, `Home`, `Explore`, and `Docs`.
 - iOS and Android put `Home` and `Explore` in a bottom tab bar and have no `Docs` tab.
 - On web, `Docs` is a new browser tab to `https://docs.expo.dev`. On iOS and Android, the same control opens an in-app browser.
-- The Home dev-tools hint on web is `use browser devtools`. On a device it is shake-or-`m`. On a simulator it is `cmd+d` (iOS) or `cmd+m` (Android).
+- Home is a workout log. The user types a sentence, presses Parse, edits the draft, and presses Save. Confirmed logs stay on the page until a reload.
 
 A passing web run does not prove those native paths.
 
@@ -65,7 +65,7 @@ Stable handles on web:
 - `Docs` is a link to `https://docs.expo.dev` with `role="link"` and `target="_blank"`.
 - Collapsible titles are focusable controls (`tabindex="0"`) with no role and no accessible name. The snapshot calls them `generic`. Their visible labels are on `innerText`. Closed sections omit their body text from the document. The chevron is `rotate(90deg)` when closed and `rotate(-90deg)` when open.
 - Link names can include a trailing icon, so `Docs` may appear as `Docs ` and `Expo documentation` the same way. Match the prefix.
-- Home copy that must be visible: `Welcome to Expo`, `get started`, `Try editing`, `src/app/index.tsx`, `Dev tools`, `use browser devtools`, `Fresh start`, `npm run reset-project`, and `v` plus the installed expo version.
+- Home copy that must be visible: `Welcome to Reppie`, a field named `Workout sentence`, buttons `Parse` and `Save`, and `v` plus the installed expo version. After saving `bench 3x8 80kg`, the history shows that sentence and `Bench`.
 
 Read `.cursor/skills/verify-reppieapp/features/README.md` and the feature file before driving. A proof of one entry point does not cover the others listed there.
 
@@ -79,7 +79,7 @@ For each driven feature, keep:
 - A full-page screenshot after the action, with ReppieApp's own chrome visible (`Expo Starter`, `Home`, or `Explore`). Copy it from the tool's `Saved to` path into this folder. Passing `filename` does not write the repo path.
 - The doctor `url` and the feature id in a `notes.txt` beside those files.
 
-Exercise the on-screen control. Do not prove a screen by curling HTML alone. Capture the action and the state it produced. This app stores no rows and writes no user files; the side effect of opening a collapsible is the body text appearing on that same page. Reloading clears it. Do not treat a reload as persistence.
+Exercise the on-screen control. Do not prove a screen by curling HTML alone. Capture the action and the state it produced. Confirmed workout logs live in memory for the page load. Reloading clears them. Do not treat a reload as persistence. Opening a collapsible shows its body text on that same page, and a reload closes it.
 
 `Docs` leaves the origin. Proof of that feature is the new tab's URL, not a change to the ReppieApp page.
 
