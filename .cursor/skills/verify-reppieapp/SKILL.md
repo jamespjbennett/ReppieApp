@@ -12,7 +12,7 @@ Web and native do not present the same chrome:
 - Web puts a top bar on the page: `Expo Starter`, `Home`, `Explore`, and `Docs`.
 - iOS and Android put `Home` and `Explore` in a bottom tab bar and have no `Docs` tab.
 - On web, `Docs` is a new browser tab to `https://docs.expo.dev`. On iOS and Android, the same control opens an in-app browser.
-- Home is a workout log. The user types a sentence, presses Parse, edits the draft, and presses Save. Confirmed logs stay on the page until a reload.
+- Home is a workout log. The user types a sentence, presses Parse, edits the draft, and presses Save. Confirmed logs stay after a reload.
 
 A passing web run does not prove those native paths.
 
@@ -26,11 +26,13 @@ From the repo root, with permission to bind a local port:
 
 The script starts `npx expo start --localhost --port <port>` with `CI=1` and `EXPO_NO_TELEMETRY=1`. `CI=1` keeps Metro from prompting and also disables file reloads. After editing app code, run cleanup and launch again before driving.
 
+That launch returns 500 once the screen imports `expo-sqlite`. SDK 57 builds the dev page with chunk splitting off, and the worker chunk is missing. Persistence on web was proved with `npx expo export --platform web`, then a static server that sends `Cross-Origin-Embedder-Policy: credentialless` and `Cross-Origin-Opener-Policy: same-origin`. Do not treat a 500 from this launch as proof the save path is broken.
+
 Metro binds `::1` only. Use the printed `http://localhost:<port>`. `http://127.0.0.1:<port>` is connection refused.
 
 The log line `Waiting on http://localhost:<port>` means the process is listening. The app is ready only when launch exits 0, which requires one `curl` of `/` to return HTML containing `Welcome to` and `Expo Starter`. That first server render compiles the web bundle and often takes about 90 seconds. Do not retry it with a short timeout; an aborted request starts another bundle.
 
-There is no database and no seed. A fresh server is the baseline.
+Confirmed logs live in `reppie.db` in the browser. A fresh server still serves an empty list until the user saves one.
 
 Only one verification server per checkout. A second `launch` exits without touching the one already recorded. Do not start another Metro in this repo while it is up; they share `.expo`. Never kill a process this script did not start. A developer server on port 8081 is left alone. The script picks the first free port from 8091 through 8110.
 
@@ -79,7 +81,7 @@ For each driven feature, keep:
 - A full-page screenshot after the action, with ReppieApp's own chrome visible (`Expo Starter`, `Home`, or `Explore`). Copy it from the tool's `Saved to` path into this folder. Passing `filename` does not write the repo path.
 - The doctor `url` and the feature id in a `notes.txt` beside those files.
 
-Exercise the on-screen control. Do not prove a screen by curling HTML alone. Capture the action and the state it produced. Confirmed workout logs live in memory for the page load. Reloading clears them. Do not treat a reload as persistence. Opening a collapsible shows its body text on that same page, and a reload closes it.
+Exercise the on-screen control. Do not prove a screen by curling HTML alone. Capture the action and the state it produced. Confirmed workout logs are stored in `reppie.db`. Reloading the page keeps them. Opening a collapsible shows its body text on that same page, and a reload closes the collapsible.
 
 `Docs` leaves the origin. Proof of that feature is the new tab's URL, not a change to the ReppieApp page.
 
