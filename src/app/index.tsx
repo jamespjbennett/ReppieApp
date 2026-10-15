@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -90,27 +90,31 @@ function formatSet(set: SetEntry, index: number): string {
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const { logs, confirm } = useWorkoutJournal();
+  const { logs, saving, confirm } = useWorkoutJournal();
   const [sentence, setSentence] = useState('');
   const [draft, setDraft] = useState<WorkoutDraft | null>(null);
   const [uncommitted, setUncommitted] = useState<Record<string, string>>({});
-  const saveLocked = useRef(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const hasPending = Object.keys(uncommitted).length > 0;
-  const canSave = draft !== null && draft.exercises.length > 0 && !hasPending;
+  const canSave = draft !== null && draft.exercises.length > 0 && !hasPending && !saving;
 
   async function onParse() {
     const next = await parseWorkout(sentence);
-    saveLocked.current = false;
+    setSaveFailed(false);
     setDraft(next);
     setUncommitted({});
   }
 
-  function onSave() {
-    if (!draft || draft.exercises.length === 0 || saveLocked.current) return;
-    confirm(draft);
-    saveLocked.current = true;
-    setDraft(null);
-    setUncommitted({});
+  async function onSave() {
+    if (!draft || !canSave) return;
+    const outcome = await confirm(draft);
+    if (outcome.kind === 'saved') {
+      setDraft(null);
+      setUncommitted({});
+      setSaveFailed(false);
+      return;
+    }
+    setSaveFailed(outcome.kind === 'failed');
   }
 
   function onSetText(exerciseIndex: number, setIndex: number, field: SetField, text: string) {
@@ -154,6 +158,7 @@ export default function HomeScreen() {
 
           <Pressable
             accessibilityRole="button"
+            disabled={saving}
             onPress={() => {
               void onParse();
             }}
@@ -172,6 +177,8 @@ export default function HomeScreen() {
           {hasPending ? (
             <ThemedText type="small">Enter a number or clear the field before saving.</ThemedText>
           ) : null}
+
+          {saveFailed ? <ThemedText type="small">Could not save. Try again.</ThemedText> : null}
 
           {draft?.exercises.map((exercise, exerciseIndex) => (
             <ThemedView key={exerciseIndex} style={styles.exercise}>
