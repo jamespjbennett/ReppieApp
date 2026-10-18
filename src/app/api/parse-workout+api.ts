@@ -2,7 +2,7 @@ import type { ExerciseEntry, SetEntry, WorkoutDraft } from '@/features/workout/t
 
 const STUB_VERSION = 'stub-1' as const;
 const MODEL_VERSION = 'model-1' as const;
-const MODEL_NAME = 'gpt-4.1-mini';
+const MODEL_NAME = 'claude-haiku-5-5';
 
 const MIN_SETS = 1;
 const MAX_SETS = 30;
@@ -96,7 +96,7 @@ function stubDraft(rawText: string): WorkoutDraft {
 }
 
 function readModelKey(): string | null {
-  const key = process.env.REPPIE_MODEL_KEY;
+  const key = process.env.ANTHROPIC_API_KEY;
   if (typeof key !== 'string' || key.trim() === '') return null;
   return key.trim();
 }
@@ -135,52 +135,57 @@ function draftFromModel(rawText: string, payload: unknown): WorkoutDraft | null 
   return { rawText, parserVersion: MODEL_VERSION, exercises };
 }
 
+function modelText(body: unknown): string | null {
+  if (!body || typeof body !== 'object') return null;
+  const stop = (body as { stop_reason?: unknown }).stop_reason;
+  if (stop === 'refusal' || stop === 'max_tokens') return null;
+  const content = (body as { content?: unknown }).content;
+  if (!Array.isArray(content)) return null;
+  const block = content.find(
+    (item) => item && typeof item === 'object' && (item as { type?: unknown }).type === 'text',
+  ) as { text?: unknown } | undefined;
+  return typeof block?.text === 'string' ? block.text : null;
+}
+
 async function modelDraft(rawText: string, key: string): Promise<WorkoutDraft | null> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${key}`,
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
       'Content-Type': 'application/json',
     },
     signal: AbortSignal.timeout(20000),
     body: JSON.stringify({
       model: MODEL_NAME,
-      messages: [
-        {
-          role: 'system',
-          content: [
-            'Turn one workout sentence into exercises and sets.',
-            'Return only the structured object.',
-            'Leave reps, weightKg, or durationSec null when the sentence did not include that number.',
-            'Do not invent a number.',
-            'Store weight in kilograms. Convert pounds with weightKg = pounds * 0.45359237, rounded to two decimals.',
-            'A count such as 3x8 is three sets of 8 reps.',
-            'Keep a hyphen in the exercise name. Capitalize the first letter.',
-            'Use one set when the sentence names an exercise and no set count.',
-            'An exercise with more than 30 sets is not allowed.',
-            'bench 3x8 80kg is Bench, three sets, 8 reps, 80 kg, duration null.',
-            'pull-up 3x8 is Pull-up, three sets, 8 reps, weight null, duration null.',
-            'plank 60s is Plank, one set, reps null, weight null, duration 60.',
-          ].join(' '),
-        },
-        { role: 'user', content: rawText },
-      ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'workout_draft',
-          strict: true,
+      max_tokens: 2048,
+      system: [
+        'Turn one workout sentence into exercises and sets.',
+        'Leave reps, weightKg, or durationSec null when the sentence did not include that number.',
+        'Do not invent a number.',
+        'Store weight in kilograms. Convert pounds with weightKg = pounds * 0.45359237, rounded to two decimals.',
+        'A count such as 3x8 is three sets of 8 reps.',
+        'Keep a hyphen in the exercise name. Capitalize the first letter.',
+        'Use one set when the sentence names an exercise and no set count.',
+        'An exercise with more than 30 sets is not allowed.',
+        'bench 3x8 80kg is Bench, three sets, 8 reps, 80 kg, duration null.',
+        'pull-up 3x8 is Pull-up, three sets, 8 reps, weight null, duration null.',
+        'plank 60s is Plank, one set, reps null, weight null, duration 60.',
+      ].join(' '),
+      messages: [{ role: 'user', content: rawText }],
+      output_config: {
+        format: {
+          type: 'json_schema',
           schema: DRAFT_SCHEMA,
         },
       },
     }),
   });
   if (!response.ok) return null;
-  const body: unknown = await response.json();
-  const content = (body as { choices?: { message?: { content?: unknown } }[] }).choices?.[0]?.message?.content;
-  if (typeof content !== 'string') return null;
+  const text = modelText(await response.json());
+  if (!text) return null;
   try {
-    return draftFromModel(rawText, JSON.parse(content));
+    return draftFromModel(rawText, JSON.parse(text));
   } catch {
     return null;
   }
