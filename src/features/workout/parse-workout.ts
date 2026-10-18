@@ -13,7 +13,11 @@ function isSetEntry(value: unknown): value is SetEntry {
 function isWorkoutDraft(value: unknown): value is WorkoutDraft {
   if (!value || typeof value !== 'object') return false;
   const draft = value as WorkoutDraft;
-  if (draft.parserVersion !== 'stub-1' || typeof draft.rawText !== 'string' || !Array.isArray(draft.exercises)) {
+  if (
+    (draft.parserVersion !== 'stub-1' && draft.parserVersion !== 'model-1') ||
+    typeof draft.rawText !== 'string' ||
+    !Array.isArray(draft.exercises)
+  ) {
     return false;
   }
   return draft.exercises.every(

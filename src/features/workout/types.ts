@@ -20,6 +20,6 @@ export type WorkoutLog = {
 
 export type WorkoutDraft = {
   rawText: string;
-  parserVersion: 'stub-1';
+  parserVersion: 'stub-1' | 'model-1';
   exercises: ExerciseEntry[];
 };
