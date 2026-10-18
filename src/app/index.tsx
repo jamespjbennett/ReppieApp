@@ -95,14 +95,20 @@ export default function HomeScreen() {
   const [draft, setDraft] = useState<WorkoutDraft | null>(null);
   const [uncommitted, setUncommitted] = useState<Record<string, string>>({});
   const [saveFailed, setSaveFailed] = useState(false);
+  const [parseFailed, setParseFailed] = useState(false);
   const hasPending = Object.keys(uncommitted).length > 0;
   const canSave = draft !== null && draft.exercises.length > 0 && !hasPending && !saving;
 
   async function onParse() {
-    const next = await parseWorkout(sentence);
-    setSaveFailed(false);
-    setDraft(next);
-    setUncommitted({});
+    try {
+      const next = await parseWorkout(sentence);
+      setParseFailed(false);
+      setSaveFailed(false);
+      setDraft(next);
+      setUncommitted({});
+    } catch {
+      setParseFailed(true);
+    }
   }
 
   async function onSave() {
@@ -149,7 +155,10 @@ export default function HomeScreen() {
             accessibilityLabel="Workout sentence"
             autoCapitalize="none"
             autoCorrect={false}
-            onChangeText={setSentence}
+            onChangeText={(text) => {
+              setSentence(text);
+              setParseFailed(false);
+            }}
             placeholder="bench 3x8 80kg"
             placeholderTextColor={theme.textSecondary}
             style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
@@ -177,6 +186,8 @@ export default function HomeScreen() {
           {hasPending ? (
             <ThemedText type="small">Enter a number or clear the field before saving.</ThemedText>
           ) : null}
+
+          {parseFailed ? <ThemedText type="small">Could not parse. Try again.</ThemedText> : null}
 
           {saveFailed ? <ThemedText type="small">Could not save. Try again.</ThemedText> : null}
 

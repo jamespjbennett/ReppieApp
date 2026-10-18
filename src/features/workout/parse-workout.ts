@@ -1,28 +1,44 @@
 import type { ExerciseEntry, SetEntry, WorkoutDraft, WorkoutLog } from '@/features/workout/types';
 
-const PARSER_VERSION = 'stub-1';
-
-const MIN_SETS = 1;
-const MAX_SETS = 30;
-
-const SENTENCE =
-  /^([A-Za-z]+(?:\s+[A-Za-z]+)*)\s+(\d+)x(\d+)(?:\s+(\d+(?:\.\d+)?)kg)?$/i;
-
-function capitalizeFirst(name: string): string {
-  return name.charAt(0).toUpperCase() + name.slice(1);
+function isNullableNumber(value: unknown): value is number | null {
+  return value === null || (typeof value === 'number' && Number.isFinite(value));
 }
 
-function unmatched(rawText: string, trimmed: string): WorkoutDraft {
-  return {
-    rawText,
-    parserVersion: PARSER_VERSION,
-    exercises: [
-      {
-        name: trimmed,
-        sets: [{ reps: null, weightKg: null, durationSec: null }],
-      },
-    ],
-  };
+function isSetEntry(value: unknown): value is SetEntry {
+  if (!value || typeof value !== 'object') return false;
+  const set = value as SetEntry;
+  return isNullableNumber(set.reps) && isNullableNumber(set.weightKg) && isNullableNumber(set.durationSec);
+}
+
+function isWorkoutDraft(value: unknown): value is WorkoutDraft {
+  if (!value || typeof value !== 'object') return false;
+  const draft = value as WorkoutDraft;
+  if (draft.parserVersion !== 'stub-1' || typeof draft.rawText !== 'string' || !Array.isArray(draft.exercises)) {
+    return false;
+  }
+  return draft.exercises.every(
+    (exercise) =>
+      exercise &&
+      typeof exercise.name === 'string' &&
+      Array.isArray(exercise.sets) &&
+      exercise.sets.every(isSetEntry),
+  );
+}
+
+export async function parseWorkout(rawText: string): Promise<WorkoutDraft> {
+  const response = await fetch('/api/parse-workout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sentence: rawText }),
+  });
+  if (!response.ok) {
+    throw new Error('Parse failed');
+  }
+  const body: unknown = await response.json();
+  if (!isWorkoutDraft(body)) {
+    throw new Error('Parse failed');
+  }
+  return body;
 }
 
 function copyExercises(exercises: ExerciseEntry[]): ExerciseEntry[] {
@@ -34,42 +50,6 @@ function copyExercises(exercises: ExerciseEntry[]): ExerciseEntry[] {
       durationSec: set.durationSec,
     })),
   }));
-}
-
-export async function parseWorkout(rawText: string): Promise<WorkoutDraft> {
-  const trimmed = rawText.trim();
-  if (trimmed === '') {
-    return { rawText, parserVersion: PARSER_VERSION, exercises: [] };
-  }
-
-  const match = SENTENCE.exec(trimmed);
-  if (!match) return unmatched(rawText, trimmed);
-
-  const setCount = Number(match[2]);
-  const reps = Number(match[3]);
-  if (
-    !Number.isSafeInteger(setCount) ||
-    setCount < MIN_SETS ||
-    setCount > MAX_SETS ||
-    !Number.isSafeInteger(reps)
-  ) {
-    return unmatched(rawText, trimmed);
-  }
-
-  const weightToken = match[4];
-  const weightKg = weightToken === undefined ? null : Number(weightToken);
-  if (weightKg !== null && !Number.isFinite(weightKg)) return unmatched(rawText, trimmed);
-
-  const sets: SetEntry[] = [];
-  for (let index = 0; index < setCount; index += 1) {
-    sets.push({ reps, weightKg, durationSec: null });
-  }
-
-  return {
-    rawText,
-    parserVersion: PARSER_VERSION,
-    exercises: [{ name: capitalizeFirst(match[1]), sets }],
-  };
 }
 
 export function confirmedLog(draft: WorkoutDraft): WorkoutLog | null {

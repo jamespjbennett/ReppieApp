@@ -28,7 +28,7 @@ The script starts `npx expo start --localhost --port <port>` with `CI=1` and `EX
 
 Metro binds `::1` only. Use the printed `http://localhost:<port>`. `http://127.0.0.1:<port>` is connection refused.
 
-The log line `Waiting on http://localhost:<port>` means the process is listening. The app is ready only when launch exits 0, which requires one `curl` of `/` to return HTML containing `Welcome to` and `Expo Starter`. That first server render compiles the web bundle and often takes about 90 seconds. Do not retry it with a short timeout; an aborted request starts another bundle.
+The log line `Waiting on http://localhost:<port>` means the process is listening. The app is ready only when launch exits 0, which requires one `curl` of `/` to return HTML with `id="root"` and `entry.bundle`, and without `Metro error`. That first server render compiles the web bundle and often takes about 90 seconds. Do not retry it with a short timeout; an aborted request starts another bundle. `web.output` is `server`, so the heading is drawn by the client bundle. Prove `Welcome to Reppie` and `Expo Starter` in the browser, not in that first HTML.
 
 Confirmed logs live in `reppie.db` in the browser. A fresh server still serves an empty list until the user saves one.
 
@@ -42,7 +42,7 @@ Run this before driving, and again whenever the page looks stale:
 .cursor/skills/verify-reppieapp/scripts/control-reppie doctor
 ```
 
-Exit 0 prints `ok`, `url`, `port`, `root_pid`, `listener_pid`, `expo_version`, and `bind=::1`. It checks that the recorded process is alive, that the listener is a descendant of that process, and that `/` contains `Welcome to`, `Expo Starter`, and the installed `expo` package version (`node_modules/expo/package.json`). Doctor does not start or stop anything.
+Exit 0 prints `ok`, `url`, `port`, `root_pid`, `listener_pid`, `expo_version`, and `bind=::1`. It checks that the recorded process is alive, that the listener is a descendant of that process, and that `/` returns the client shell (`id="root"` and `entry.bundle`) without `Metro error`. `expo_version` comes from `node_modules/expo/package.json`. The server HTML does not contain that version. Doctor does not start or stop anything.
 
 `control-reppie url` prints the recorded URL.
 

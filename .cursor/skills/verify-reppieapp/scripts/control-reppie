@@ -129,15 +129,20 @@ cmd_launch() {
     echo "timed out waiting for Metro to listen on $url" >&2
     exit 1
   fi
-  # One long request. A short timeout aborts server rendering and starts another bundle.
+  # Server output sends a client shell. The heading is rendered by the bundle, not this HTML.
   html="$(curl -fsS --max-time 180 "$url/" || true)"
-  if ! printf '%s' "$html" | grep -q "Welcome to"; then
+  if ! printf '%s' "$html" | grep -q 'id="root"'; then
     echo "server answered, but the home page was not usable at $url/" >&2
     tail -n 40 "$LOG_FILE" >&2 || true
     exit 1
   fi
-  if ! printf '%s' "$html" | grep -q "Expo Starter"; then
-    echo "home page is missing the web tab bar at $url/" >&2
+  if ! printf '%s' "$html" | grep -q "entry.bundle"; then
+    echo "home page is missing the web bundle at $url/" >&2
+    exit 1
+  fi
+  if printf '%s' "$html" | grep -q "Metro error"; then
+    echo "home page bundle failed at $url/" >&2
+    tail -n 40 "$LOG_FILE" >&2 || true
     exit 1
   fi
   echo "url=$url"
@@ -165,16 +170,16 @@ cmd_doctor() {
     exit 1
   fi
   html="$(curl -fsS --max-time 180 "$url/" || true)"
-  if ! printf '%s' "$html" | grep -q "Welcome to"; then
+  if ! printf '%s' "$html" | grep -q 'id="root"'; then
     echo "home page is not usable at $url/" >&2
     exit 1
   fi
-  if ! printf '%s' "$html" | grep -q "Expo Starter"; then
-    echo "web tab bar is missing at $url/" >&2
+  if ! printf '%s' "$html" | grep -q "entry.bundle"; then
+    echo "web bundle is missing at $url/" >&2
     exit 1
   fi
-  if ! printf '%s' "$html" | grep -q "$version"; then
-    echo "rendered page does not contain expo version $version" >&2
+  if printf '%s' "$html" | grep -q "Metro error"; then
+    echo "home page bundle failed at $url/" >&2
     exit 1
   fi
   echo "ok"
