@@ -33,6 +33,6 @@ Preconditions:
 
 - The native Home tab is a different control from the web `Home` link. This recipe does not press the bottom tab bar.
 - Save stays disabled until Parse returns at least one exercise, and while a set field holds text that is not a number.
-- The history list is in `reppie.db`. A reload of a page that opened that file keeps saved logs. A new database file starts empty. `expo start` on web returns 500 on SDK 57 because the sqlite worker chunk is missing. Prove a reload on the web export.
+- The history list is in `reppie.db`. A reload of the same dev server keeps saved logs. A new database file starts empty.
 - The badge version is the `expo` package version, not the `version` in `app.json`.
 - `Welcome to Reppie` is the heading text. Match the text.

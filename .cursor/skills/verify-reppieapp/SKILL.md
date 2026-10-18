@@ -26,8 +26,6 @@ From the repo root, with permission to bind a local port:
 
 The script starts `npx expo start --localhost --port <port>` with `CI=1` and `EXPO_NO_TELEMETRY=1`. `CI=1` keeps Metro from prompting and also disables file reloads. After editing app code, run cleanup and launch again before driving.
 
-That launch returns 500 once the screen imports `expo-sqlite`. SDK 57 builds the dev page with chunk splitting off, and the worker chunk is missing. Persistence on web was proved with `npx expo export --platform web`, then a static server that sends `Cross-Origin-Embedder-Policy: credentialless` and `Cross-Origin-Opener-Policy: same-origin`. Do not treat a 500 from this launch as proof the save path is broken.
-
 Metro binds `::1` only. Use the printed `http://localhost:<port>`. `http://127.0.0.1:<port>` is connection refused.
 
 The log line `Waiting on http://localhost:<port>` means the process is listening. The app is ready only when launch exits 0, which requires one `curl` of `/` to return HTML containing `Welcome to` and `Expo Starter`. That first server render compiles the web bundle and often takes about 90 seconds. Do not retry it with a short timeout; an aborted request starts another bundle.

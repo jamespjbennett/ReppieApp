@@ -36,7 +36,7 @@ type SetEntry = {
 
 `expo-sqlite` stores one row per set so a later muscle total is a query. `SQLiteProvider` wraps the app in `src/app/_layout.tsx`. The database file is `reppie.db`.
 
-`npm run web` returns 500 on SDK 57. The dev server builds the page with chunk splitting off, then the sqlite worker import asserts. `npx expo export --platform web` includes that worker. Serve `dist` with `Cross-Origin-Embedder-Policy: credentialless` and `Cross-Origin-Opener-Policy: same-origin`. `metro.config.js` sets those headers on the dev server and treats `wasm` as an asset.
+`npm run web` bundles the sqlite worker. SDK 57 otherwise leaves lazy bundling on and chunk splitting off, and the serializer asserts that the worker chunk is missing. `metro.config.js` turns lazy bundling off and chunk splitting on for that web client bundle. It sets `Cross-Origin-Embedder-Policy: credentialless` and `Cross-Origin-Opener-Policy: same-origin`, and treats `wasm` as an asset.
 
 Tables:
 
